@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XINEMAX - Premium Stream Ecosystem</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            --brand-color: #8B5CF6; 
+            --brand-glow: rgba(139, 92, 246, 0.5);
+            --bg-deep: #0B0B0F;     
+            --card-bg: #13131A;
+            --nav-bg: rgba(11, 11, 15, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb {
+            background: #252532;
+            border-radius: 5px;
+            border: 2px solid var(--bg-deep);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--brand-color);
+            box-shadow: 0 0 10px var(--brand-glow);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #F3F4F6;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-top: 90px;
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- KİLİT EKRANI STİLLERİ --- */
+        #lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 10, 0.65);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .lock-box {
+            background: rgba(20, 20, 28, 0.6);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7), 0 0 40px rgba(139, 92, 246, 0.15);
+            color: white;
+            max-width: 320px;
+            width: 100%;
+        }
+        .lock-box h2 {
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #fff, var(--brand-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .lock-box input {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 0 auto 20px auto;
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .lock-box input:focus {
+            border-color: var(--brand-color);
+            box-shadow: 0 0 15px var(--brand-glow);
+            background: rgba(255,255,255,0.08);
+        }
+        .lock-box button {
+            width: 100%;
+            padding: 14px;
+            background: var(--brand-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--brand-glow);
+        }
+        .lock-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--brand-color);
+        }
+        #lock-error {
+            color: #ff4d4d;
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .ambient-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            filter: blur(15px) brightness(0.25);
+            transform: scale(1.05);
+            z-index: -1;
+            transition: background-image 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 75px;
+            background-color: var(--nav-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5%;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, #fff, var(--brand-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-grow: 0.4;
+            justify-content: flex-end;
+            max-width: 600px;
+        }
+
+        .search-container {
+            flex-grow: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .search-input:focus {
+            border-color: var(--brand-color);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px var(--brand-glow);
+        }
+
+        .dropdown-container {
+            position: relative;
+            min-width: 160px;
+        }
+
+        .dropdown-btn {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dropdown-btn .material-icons-round {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown-container.open .dropdown-btn .material-icons-round {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-list {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            left: 0;
+            background: #13131A;
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            max-height: 280px;
+            overflow-y: auto;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 1100;
+        }
+
+        .dropdown-container.open .dropdown-list {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 18px;
+            font-size: 14px;
+            color: #9CA3AF;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .dropdown-item.active {
+            background: var(--brand-color);
+            color: white;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 40px;
+            font-size: 1rem;
+            color: #9CA3AF;
+        }
+
+        .player-container {
+            display: none;
+            margin: 20px auto 40px auto;
+            max-width: 920px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 92, 246, 0.15);
+            position: relative;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .custom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+            padding: 15px 25px 20px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+            z-index: 20;
+        }
+
+        .player-container.hide-controls .custom-controls {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .progress-container-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .progress-area {
+            position: relative;
+            flex-grow: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: height 0.15s;
+        }
+        
+        .progress-area:hover {
+            height: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--brand-color);
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: #FF0000; 
+            box-shadow: 0 0 8px var(--brand-color);
+            border-radius: 50%;
+        }
+
+        .duration-display-right {
+            font-size: 0.85rem;
+            color: #BCBCBC;
+            font-weight: 500;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .progress-tooltip {
+            position: absolute;
+            top: -35px;
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid var(--glass-border);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #fff;
+            transform: translateX(-50%);
+            display: none;
+            pointer-events: none;
+        }
+
+        .controls-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .controls-left, .controls-right {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: #FFF;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s, transform 0.1s;
+            padding: 2px;
+            user-select: none;
+        }
+        
+        .control-btn .material-icons-round {
+            font-size: 28px;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.08);
+        }
+
+        .controls-center-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #E2E2E2;
+            max-width: 50%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .volume-slider {
+            width: 0;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            outline: none;
+            transition: width 0.25s ease;
+            cursor: pointer;
+        }
+        .volume-container:hover .volume-slider {
+            width: 60px;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #FFF;
+        }
+
+        main {
+            padding: 0 5% 60px 5%;
+            position: relative;
+            z-index: 5;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            margin-top: 30px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #E5E7EB;
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+            padding: 15px 0;
+        }
+
+        .movie-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+        }
+
+        .movie-card:hover {
+            transform: translateY(-6px);
+            border-color: transparent;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.6), 0 0 25px rgba(139, 92, 246, 0.45);
+        }
+
+        .movie-thumb {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            background: #1A1A24;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4B5563;
+            font-size: 2.2rem;
+        }
+
+        .movie-info {
+            padding: 14px;
+            background: #13131A;
+        }
+
+        .movie-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #E5E7EB;
+        }
+
+        #infinite-loading {
+            text-align: center;
+            padding: 30px;
+            font-size: 0.95rem;
+            color: var(--brand-color);
+            font-weight: 600;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- KİLİT EKRANI -->
+    <div id="lock-screen">
+        <div class="lock-box">
+            <h2>XINEMAX</h2>
+            <input type="password" id="lock-input" placeholder="Şifreyi Girin" maxlength="6" autofocus>
+            <button onclick="checkPassword()">Giriş Yap</button>
+            <div id="lock-error">Hatalı Şifre!</div>
+        </div>
+    </div>
+
+    <div id="ambient-bg" class="ambient-background"></div>
+
+    <header>
+        <div class="logo" id="logo-btn">XINEMAX</div>
+        <div class="header-actions">
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Sistem senkronize ediliyor..." disabled />
+            </div>
+            <div class="dropdown-container" id="dropdown-container">
+                <button class="dropdown-btn" id="dropdown-btn" disabled>
+                    <span id="selected-category-text">Kategoriler</span>
+                    <span class="material-icons-round">expand_more</span>
+                </button>
+                <div class="dropdown-list" id="dropdown-list"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="player-container" id="player-container">
+            <div class="video-wrapper" id="video-wrapper">
+                <video id="video" playsinline></video>
+                
+                <div class="custom-controls">
+                    <div class="progress-container-wrapper">
+                        <div class="progress-area" id="progress-area">
+                            <div class="progress-bar" id="progress-bar"></div>
+                            <div class="progress-tooltip" id="progress-tooltip">00:00</div>
+                        </div>
+                        <div class="duration-display-right" id="duration-time">0:00</div>
+                    </div>
+                    
+                    <div class="controls-main">
+                        <div class="controls-left">
+                            <button class="control-btn" id="play-btn">
+                                <span class="material-icons-round">play_arrow</span>
+                            </button>
+                            <button class="control-btn" id="rewind-btn">
+                                <span class="material-icons-round">replay_10</span>
+                            </button>
+                            <button class="control-btn" id="forward-btn">
+                                <span class="material-icons-round">forward_10</span>
+                            </button>
+                            <div class="volume-container">
+                                <button class="control-btn" id="mute-btn">
+                                    <span class="material-icons-round">volume_up</span>
+                                </button>
+                                <input type="range" class="volume-slider" id="volume-slider" min="0" max="1" step="0.05" value="1">
+                            </div>
+                        </div>
+                        
+                        <div class="controls-center-title" id="current-title">Film Yükleniyor</div>
+                        
+                        <div class="controls-right">
+                            <button class="control-btn" id="fullscreen-btn">
+                                <span class="material-icons-round">fullscreen</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="status" class="status-message">İçerikler çekiliyor ve karıştırılıyor, lütfen bekleyin...</div>
+        
+        <h2 id="section-title" style="display:none;">TÜM FİLMLER</h2>
+        <div class="movie-grid" id="movie-grid"></div>
+        
+        <div id="infinite-loading">Veri blokları aktarılıyor...</div>
+    </main>
+
+    <script>
+        // --- ŞİFRE KONTROL MEKANİZMASI ---
+        function checkPassword() {
+            const input = document.getElementById('lock-input');
+            const errorDiv = document.getElementById('lock-error');
+            
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            
+            // MixPUD dinamik saat formülü mantığı
+            const secretKey = (hours * 10000) + (minutes * 100);
+            
+            if (Number(input.value) === secretKey) {
+                document.getElementById('lock-screen').style.display = 'none';
+                // Giriş başarılı olunca M3U verisini çekmeye başla
+                fetchM3UList();
+            } else {
+                errorDiv.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // Enter tuşu ile giriş tetikleyici
+        document.getElementById('lock-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
+        const M3U_URL = "https://tv606.github.io/mixpud/apps/list.m3u";
+        
+        let allMovies = [];      
+        let filteredMovies = []; 
+        let activeCategory = "Tümü";
+        
+        const ITEMS_PER_PAGE = 40; 
+        let currentPage = 1;
+        let isLodingMore = false;
+
+        const logoBtn = document.getElementById('logo-btn');
+        const ambientBg = document.getElementById('ambient-bg');
+        const movieGrid = document.getElementById('movie-grid');
+        const searchInput = document.getElementById('search-input');
+        const statusDiv = document.getElementById('status');
+        const sectionTitle = document.getElementById('section-title');
+        
+        const dropdownContainer = document.getElementById('dropdown-container');
+        const dropdownBtn = document.getElementById('dropdown-btn');
+        const dropdownList = document.getElementById('dropdown-list');
+        const selectedCategoryText = document.getElementById('selected-category-text');
+        
+        const playerContainer = document.getElementById('player-container');
+        const videoWrapper = document.getElementById('video-wrapper');
+        const video = document.getElementById('video');
+        const currentTitle = document.getElementById('current-title');
+        const infiniteLoading = document.getElementById('infinite-loading');
+        
+        const playBtn = document.getElementById('play-btn');
+        const muteBtn = document.getElementById('mute-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const rewindBtn = document.getElementById('rewind-btn');
+        const forwardBtn = document.getElementById('forward-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressArea = document.getElementById('progress-area');
+        const progressTooltip = document.getElementById('progress-tooltip');
+        const durationTimeEl = document.getElementById('duration-time');
+        const volumeSlider = document.getElementById('volume-slider');
+        
+        let hls = null;
+        let controlsTimeout;
+
+        // Sayfa yüklenince direkt fetch etmek yerine sadece logoyu bağla (fetch şifre onayına taşındı)
+        logoBtn.addEventListener('click', resetToHome);
+
+        dropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownContainer.classList.toggle('open');
+        });
+
+        document.addEventListener('click', () => {
+            dropdownContainer.classList.remove('open');
+        });
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function resetToHome() {
+            searchInput.value = "";
+            activeCategory = "Tümü";
+            selectedCategoryText.textContent = "Kategoriler";
+            updateDropdownSelection();
+            
+            filteredMovies = shuffleArray([...allMovies]);
+            sectionTitle.textContent = "TÜM FİLMLER";
+            
+            playerContainer.style.display = 'none';
+            if (hls) { hls.destroy(); hls = null; }
+            video.src = "";
+            playBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>';
+            ambientBg.style.backgroundImage = 'none';
+            
+            currentPage = 1;
+            movieGrid.innerHTML = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            renderNextPage();
+        }
+
+        async function fetchM3UList() {
+            try {
+                const response = await fetch(M3U_URL);
+                if (!response.ok) throw new Error("Veri çekilemedi.");
+                const data = await response.text();
+                
+                allMovies = parseAndUniqueM3U(data);
+                filteredMovies = shuffleArray([...allMovies]);
+                
+                buildDropdownMenu();
+                
+                statusDiv.style.display = 'none';
+                sectionTitle.style.display = 'block';
+                searchInput.disabled = false;
+                dropdownBtn.disabled = false;
+                searchInput.placeholder = `${allMovies.length.toLocaleString('tr-TR')} film arasından ara...`;
+
+                renderNextPage();
+                window.addEventListener('scroll', handleScroll);
+            } catch (error) {
+                statusDiv.textContent = "Bağlantı hatası: M3U listesi yüklenemedi.";
+                console.error(error);
+            }
+        }
+
+        function parseAndUniqueM3U(data) {
+            const lines = data.split('\n');
+            const playlist = [];
+            const seenUrls = new Set(); 
+            const seenTitles = new Set(); 
+            
+            let currentItem = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+
+                if (line.startsWith('#EXTINF:')) {
+                    currentItem = {};
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                    if (logoMatch) currentItem.logo = logoMatch[1];
+
+                    const groupMatch = line.match(/group-title="([^"]+)"/);
+                    currentItem.category = groupMatch ? groupMatch[1].trim() : "Diğer";
+
+                    const commaIndex = line.lastIndexOf(',');
+                    if (commaIndex !== -1) {
+                        currentItem.title = line.substring(commaIndex + 1).trim() || "Bilinmeyen Başlık";
+                    } else {
+                        currentItem.title = "Bilinmeyen Başlık";
+                    }
+                } else if (line.startsWith('http') && currentItem) {
+                    currentItem.url = line;
+                    if (!seenUrls.has(currentItem.url) && !seenTitles.has(currentItem.title.toLowerCase())) {
+                        seenUrls.add(currentItem.url);
+                        seenTitles.add(currentItem.title.toLowerCase());
+                        playlist.push(currentItem);
+                    }
+                    currentItem = null; 
+                }
+            }
+            return playlist;
+        }
+
+        function buildDropdownMenu() {
+            const categories = new Set();
+            allMovies.forEach(m => {
+                if(m.category && m.category !== "Diğer" && m.category !== "Son Eklenenler" && m.category !== "Türk Yapımı") {
+                    categories.add(m.category);
+                }
+            });
+
+            const sortedCategories = Array.from(categories).sort((a, b) => a.localeCompare(b, 'tr'));
+            const finalCategories = ["Tümü", ...sortedCategories];
+            if (allMovies.some(m => m.category === "Diğer")) {
+                finalCategories.push("Diğer");
+            }
+
+            dropdownList.innerHTML = "";
+            finalCategories.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = `dropdown-item ${cat === activeCategory ? 'active' : ''}`;
+                item.textContent = cat;
+                item.dataset.category = cat;
+                
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectCategory(cat);
+                    dropdownContainer.classList.remove('open');
+                });
+                dropdownList.appendChild(item);
+            });
+        }
+
+        function updateDropdownSelection() {
+            const items = dropdownList.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                if (item.dataset.category === activeCategory) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function selectCategory(catName) {
+            activeCategory = catName;
+            selectedCategoryText.textContent = catName === "Tümü" ? "Kategoriler" : catName;
+            updateDropdownSelection();
+            searchInput.value = ""; 
+
+            let targetMovies = [];
+            if (catName === "Tümü") {
+                targetMovies = [...allMovies];
+                sectionTitle.textContent = "TÜM FİLMLER";
+            } else {
+                targetMovies = allMovies.filter(m => m.category === catName);
+                sectionTitle.textContent = catName.toUpperCase();
+            }
+
+            filteredMovies = shuffleArray(targetMovies);
+            
+            currentPage = 1;
+            movieGrid.innerHTML = '';
+            renderNextPage();
+        }
+
+        function renderNextPage() {
+            if (isLodingMore) return;
+            isLodingMore = true;
+            infiniteLoading.style.display = 'block';
+
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const pageItems = filteredMovies.slice(startIndex, endIndex);
+
+            if (pageItems.length === 0) {
+                infiniteLoading.style.display = 'none';
+                isLodingMore = false;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            pageItems.forEach(movie => {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                
+                const imgHtml = movie.logo 
+                    ? `<img class="movie-thumb" src="${movie.logo}" alt="${movie.title}" loading="lazy" onerror="this.src='https://placehold.co/200x260/13131A/8B5CF6?text=VIDEO'">`
+                    : `<div class="movie-thumb">🎞️</div>`;
+
+                card.innerHTML = `
+                    ${imgHtml}
+                    <div class="movie-info">
+                        <div class="movie-title">${movie.title}</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => playVideo(movie.url, movie.title, movie.logo));
+                fragment.appendChild(card);
+            });
+
+            movieGrid.appendChild(fragment);
+            currentPage++;
+            infiniteLoading.style.display = 'none';
+            isLodingMore = false;
+        }
+
+        function handleScroll() {
+            if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300) {
+                renderNextPage();
+            }
+        }
+
+        let searchTimeout;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.toLowerCase().trim();
+
+            searchTimeout = setTimeout(() => {
+                let baseList = activeCategory === "Tümü" 
+                    ? [...allMovies] 
+                    : allMovies.filter(m => m.category === activeCategory);
+
+                if (query === "") {
+                    filteredMovies = shuffleArray(baseList);
+                } else {
+                    filteredMovies = baseList.filter(movie => 
+                        movie.title.toLowerCase().includes(query)
+                    );
+                }
+                currentPage = 1;
+                movieGrid.innerHTML = '';
+                window.scrollTo({ top: 0 });
+                renderNextPage();
+            }, 250);
+        });
+
+        function playVideo(url, title, logoUrl) {
+            playerContainer.style.display = 'block';
+            currentTitle.textContent = title;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (logoUrl) {
+                ambientBg.style.backgroundImage = `url('${logoUrl}')`;
+            } else {
+                ambientBg.style.backgroundImage = 'none';
+            }
+
+            if (hls) { hls.destroy(); hls = null; }
+            video.removeAttribute('src');
+            video.load();
+
+            const isHLS = url.includes('.m3u8') || url.includes('m3u8') || url.includes('live');
+
+            if (Hls.isSupported() && isHLS) {
+                hls = new Hls({
+                    maxMaxBufferLength: 30,
+                    enableWorker: true
+                });
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(e => console.log(e)));
+            } else {
+                video.src = url;
+                video.load();
+                video.play().catch(e => console.log(e));
+            }
+        }
+
+        function togglePlay() {
+            if (video.paused) {
+                video.play().catch(e => console.log(e));
+                playBtn.innerHTML = '<span class="material-icons-round">pause</span>';
+            } else {
+                video.pause();
+                playBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>';
+            }
+        }
+
+        playBtn.addEventListener('click', togglePlay);
+        video.addEventListener('click', togglePlay);
+        video.addEventListener('play', () => playBtn.innerHTML = '<span class="material-icons-round">pause</span>');
+        video.addEventListener('pause', () => playBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>');
+
+        function formatTime(time) {
+            if (isNaN(time) || !isFinite(time)) return "0:00";
+            const hours = Math.floor(time / 3600);
+            const minutes = Math.floor((time % 3600) / 60);
+            const seconds = Math.floor(time % 60);
+            
+            if (hours > 0) {
+                return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            }
+            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        video.addEventListener('timeupdate', () => {
+            const percentage = (video.currentTime / video.duration) * 100;
+            progressBar.style.width = `${percentage || 0}%`;
+        });
+
+        video.addEventListener('durationchange', () => {
+            durationTimeEl.textContent = formatTime(video.duration);
+        });
+
+        progressArea.addEventListener('click', (e) => {
+            const clickPercent = e.offsetX / progressArea.clientWidth;
+            if (video.duration) video.currentTime = clickPercent * video.duration;
+        });
+
+        progressArea.addEventListener('mousemove', (e) => {
+            if (!video.duration) return;
+            const clickPercent = e.offsetX / progressArea.clientWidth;
+            progressTooltip.textContent = formatTime(clickPercent * video.duration);
+            progressTooltip.style.left = `${e.offsetX}px`;
+            progressTooltip.style.display = 'block';
+        });
+
+        progressArea.addEventListener('mouseleave', () => progressTooltip.style.display = 'none');
+
+        rewindBtn.addEventListener('click', () => video.currentTime -= 10);
+        forwardBtn.addEventListener('click', () => video.currentTime += 10);
+
+        videoWrapper.addEventListener('dblclick', (e) => {
+            const rect = videoWrapper.getBoundingClientRect();
+            if ((e.clientX - rect.left) < rect.width / 2) {
+                video.currentTime -= 10;
+            } else {
+                video.currentTime += 10;
+            }
+        });
+
+        muteBtn.addEventListener('click', () => {
+            video.muted = !video.muted;
+            muteBtn.innerHTML = `<span class="material-icons-round">${video.muted ? 'volume_off' : 'volume_up'}</span>`;
+            volumeSlider.value = video.muted ? 0 : video.volume;
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            video.volume = e.target.value;
+            video.muted = video.volume === 0;
+            muteBtn.innerHTML = `<span class="material-icons-round">${video.muted ? 'volume_off' : 'volume_up'}</span>`;
+        });
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                playerContainer.requestFullscreen().catch(err => console.log(err));
+                fullscreenBtn.innerHTML = '<span class="material-icons-round">fullscreen_exit</span>';
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.innerHTML = '<span class="material-icons-round">fullscreen</span>';
+            }
+        }
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        function resetControlsTimer() {
+            playerContainer.classList.remove('hide-controls');
+            clearTimeout(controlsTimeout);
+            if (!video.paused) {
+                controlsTimeout = setTimeout(() => playerContainer.classList.add('hide-controls'), 2500);
+            }
+        }
+        playerContainer.addEventListener('mousemove', resetControlsTimer);
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement === searchInput) return;
+            if (playerContainer.style.display === 'block') {
+                if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+                else if (e.code === 'KeyF') { e.preventDefault(); toggleFullscreen(); }
+                else if (e.code === 'ArrowRight') video.currentTime += 10;
+                else if (e.code === 'ArrowLeft') video.currentTime -= 10;
+            }
+        });
+    </script>
+</body>
+</html>
