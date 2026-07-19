@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XINEMAX - Freemium Stream Ecosystem</title>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         :root {
@@ -40,7 +39,8 @@
             overflow-x: hidden;
         }
 
-        /* --- KİLİT EKRANI STİLLERİ --- */
+
+                /* --- KİLİT EKRANI STİLLERİ --- */
         #lock-screen {
             position: fixed;
             top: 0;
@@ -278,10 +278,11 @@
             margin: 20px auto 40px auto;
             max-width: 920px;
             background: #000;
-            border-radius: 12px;
-            overflow: hidden;
+            border-radius: 16px; 
+            overflow: hidden; 
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 92, 246, 0.15);
             position: relative;
+            border: 1px solid var(--glass-border);
         }
 
         .video-wrapper {
@@ -290,166 +291,62 @@
             aspect-ratio: 16 / 9;
         }
 
-        video {
+        /* Yeni Eklenen Mor Yükleme Ekranı Katmanı */
+        .player-loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            display: block;
-            object-fit: contain;
-        }
-
-        .custom-controls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
-            padding: 15px 25px 20px 25px;
+            background-color: #0B0B0F;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            opacity: 1;
-            transition: opacity 0.4s ease;
-            z-index: 20;
-        }
-
-        .player-container.hide-controls .custom-controls {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .progress-container-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            width: 100%;
-        }
-
-        .progress-area {
-            position: relative;
-            flex-grow: 1;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.25);
-            border-radius: 2px;
-            cursor: pointer;
-            transition: height 0.15s;
-        }
-        
-        .progress-area:hover {
-            height: 6px;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--brand-color);
-            border-radius: 2px;
-            position: relative;
-        }
-
-        .progress-bar::after {
-            content: '';
-            position: absolute;
-            right: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            background: #FF0000; 
-            box-shadow: 0 0 8px var(--brand-color);
-            border-radius: 50%;
-        }
-
-        .duration-display-right {
-            font-size: 0.85rem;
-            color: #BCBCBC;
-            font-weight: 500;
-            min-width: 50px;
-            text-align: right;
-        }
-
-        .progress-tooltip {
-            position: absolute;
-            top: -35px;
-            background: rgba(20, 20, 25, 0.95);
-            border: 1px solid var(--glass-border);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            color: #fff;
-            transform: translateX(-50%);
-            display: none;
-            pointer-events: none;
-        }
-
-        .controls-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .controls-left, .controls-right {
-            display: flex;
-            align-items: center;
-            gap: 22px;
-        }
-
-        .control-btn {
-            background: none;
-            border: none;
-            color: #FFF;
-            cursor: pointer;
-            display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.2s, transform 0.1s;
-            padding: 2px;
-            user-select: none;
-        }
-        
-        .control-btn .material-icons-round {
-            font-size: 28px;
+            z-index: 10;
+            transition: opacity 0.4s ease;
         }
 
-        .control-btn:hover {
-            transform: scale(1.08);
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(139, 92, 246, 0.15);
+            border-top: 4px solid var(--brand-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
         }
 
-        .controls-center-title {
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: #E2E2E2;
-            max-width: 50%;
+        .countdown-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #E5E7EB;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+            border-radius: 16px; 
+        }
+
+        .player-title {
+            padding: 15px 20px;
+            background: linear-gradient(to bottom, #13131A, #0B0B0F);
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 1rem;
+            font-weight: 600;
+            color: #E5E7EB;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align: center;
-        }
-
-        .volume-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .volume-slider {
-            width: 0;
-            height: 4px;
-            -webkit-appearance: none;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            outline: none;
-            transition: width 0.25s ease;
-            cursor: pointer;
-        }
-        .volume-container:hover .volume-slider {
-            width: 60px;
-        }
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #FFF;
         }
 
         main {
@@ -527,7 +424,8 @@
 </head>
 <body>
 
-    <!-- KİLİT EKRANI -->
+
+        <!-- KİLİT EKRANI -->
     <div id="lock-screen">
         <div class="lock-box">
             <h2>XINEMAX</h2>
@@ -557,46 +455,14 @@
 
     <main>
         <div class="player-container" id="player-container">
-            <div class="video-wrapper" id="video-wrapper">
-                <video id="video" playsinline></video>
-                
-                <div class="custom-controls">
-                    <div class="progress-container-wrapper">
-                        <div class="progress-area" id="progress-area">
-                            <div class="progress-bar" id="progress-bar"></div>
-                            <div class="progress-tooltip" id="progress-tooltip">00:00</div>
-                        </div>
-                        <div class="duration-display-right" id="duration-time">0:00</div>
-                    </div>
-                    
-                    <div class="controls-main">
-                        <div class="controls-left">
-                            <button class="control-btn" id="play-btn">
-                                <span class="material-icons-round">play_arrow</span>
-                            </button>
-                            <button class="control-btn" id="rewind-btn">
-                                <span class="material-icons-round">replay_10</span>
-                            </button>
-                            <button class="control-btn" id="forward-btn">
-                                <span class="material-icons-round">forward_10</span>
-                            </button>
-                            <div class="volume-container">
-                                <button class="control-btn" id="mute-btn">
-                                    <span class="material-icons-round">volume_up</span>
-                                </button>
-                                <input type="range" class="volume-slider" id="volume-slider" min="0" max="1" step="0.05" value="1">
-                            </div>
-                        </div>
-                        
-                        <div class="controls-center-title" id="current-title">Film Yükleniyor</div>
-                        
-                        <div class="controls-right">
-                            <button class="control-btn" id="fullscreen-btn">
-                                <span class="material-icons-round">fullscreen</span>
-                            </button>
-                        </div>
-                    </div>
+            <div class="player-title" id="current-title">Film Yükleniyor</div>
+            <div class="video-wrapper">
+                <!-- Geri sayım katmanı buraya yerleştirildi -->
+                <div class="player-loader-overlay" id="player-loader">
+                    <div class="loader-spinner"></div>
+                    <div class="countdown-text" id="countdown-text">Film 3 saniye içinde başlıyor...</div>
                 </div>
+                <iframe id="player-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
             </div>
         </div>
 
@@ -609,6 +475,8 @@
     </main>
 
     <script>
+
+
         // --- ŞİFRE KONTROL MEKANİZMASI ---
         function checkPassword() {
             const input = document.getElementById('lock-input');
@@ -639,6 +507,7 @@
             }
         });
 
+
         const M3U_URL = "https://tv606.github.io/xinemax/list.m3u";
         
         let allMovies = [];      
@@ -662,26 +531,11 @@
         const selectedCategoryText = document.getElementById('selected-category-text');
         
         const playerContainer = document.getElementById('player-container');
-        const videoWrapper = document.getElementById('video-wrapper');
-        const video = document.getElementById('video');
+        const playerIframe = document.getElementById('player-iframe');
         const currentTitle = document.getElementById('current-title');
         const infiniteLoading = document.getElementById('infinite-loading');
-        
-        const playBtn = document.getElementById('play-btn');
-        const muteBtn = document.getElementById('mute-btn');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const rewindBtn = document.getElementById('rewind-btn');
-        const forwardBtn = document.getElementById('forward-btn');
-        const progressBar = document.getElementById('progress-bar');
-        const progressArea = document.getElementById('progress-area');
-        const progressTooltip = document.getElementById('progress-tooltip');
-        const durationTimeEl = document.getElementById('duration-time');
-        const volumeSlider = document.getElementById('volume-slider');
-        
-        let hls = null;
-        let controlsTimeout;
 
-        // Sayfa yüklenince direkt fetch etmek yerine sadece logoyu bağla (fetch şifre onayına taşındı)
+        window.addEventListener('DOMContentLoaded', fetchM3UList);
         logoBtn.addEventListener('click', resetToHome);
 
         dropdownBtn.addEventListener('click', (e) => {
@@ -711,9 +565,7 @@
             sectionTitle.textContent = "TÜM FİLMLER";
             
             playerContainer.style.display = 'none';
-            if (hls) { hls.destroy(); hls = null; }
-            video.src = "";
-            playBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>';
+            playerIframe.src = "";
             ambientBg.style.backgroundImage = 'none';
             
             currentPage = 1;
@@ -919,6 +771,7 @@
             }, 250);
         });
 
+        // Mevcut geri sayım tetikleyicisini çalıştıran güncellenmiş oynatma fonksiyonu
         function playVideo(url, title, logoUrl) {
             playerContainer.style.display = 'block';
             currentTitle.textContent = title;
@@ -930,131 +783,34 @@
                 ambientBg.style.backgroundImage = 'none';
             }
 
-            if (hls) { hls.destroy(); hls = null; }
-            video.removeAttribute('src');
-            video.load();
-
-            const isHLS = url.includes('.m3u8') || url.includes('m3u8') || url.includes('live');
-
-            if (Hls.isSupported() && isHLS) {
-                hls = new Hls({
-                    maxMaxBufferLength: 30,
-                    enableWorker: true
-                });
-                hls.loadSource(url);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(e => console.log(e)));
-            } else {
-                video.src = url;
-                video.load();
-                video.play().catch(e => console.log(e));
-            }
-        }
-
-        function togglePlay() {
-            if (video.paused) {
-                video.play().catch(e => console.log(e));
-                playBtn.innerHTML = '<span class="material-icons-round">pause</span>';
-            } else {
-                video.pause();
-                playBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>';
-            }
-        }
-
-        playBtn.addEventListener('click', togglePlay);
-        video.addEventListener('click', togglePlay);
-        video.addEventListener('play', () => playBtn.innerHTML = '<span class="material-icons-round">pause</span>');
-        video.addEventListener('pause', () => playBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>');
-
-        function formatTime(time) {
-            if (isNaN(time) || !isFinite(time)) return "0:00";
-            const hours = Math.floor(time / 3600);
-            const minutes = Math.floor((time % 3600) / 60);
-            const seconds = Math.floor(time % 60);
+            // Loader elementlerini yakalayıp görünür yapıyoruz
+            const loaderOverlay = document.getElementById('player-loader');
+            const countdownText = document.getElementById('countdown-text');
+            loaderOverlay.style.display = 'flex';
+            loaderOverlay.style.opacity = '1';
             
-            if (hours > 0) {
-                return `${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-            }
-            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            // 3 saniyelik geri sayım motoru
+            let timeLeft = 3;
+            countdownText.textContent = `Film ${timeLeft} saniye içinde başlıyor...`;
+            
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    countdownText.textContent = `Film ${timeLeft} saniye içinde başlıyor...`;
+                } else {
+                    clearInterval(countdownInterval);
+                    // Sayım bitince yumuşakça şeffaflaştırıp gizliyoruz
+                    loaderOverlay.style.opacity = '0';
+                    setTimeout(() => {
+                        loaderOverlay.style.display = 'none';
+                    }, 400);
+                }
+            }, 1000);
+
+            // Vidmody Iframe Entegrasyonu
+            playerIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-presentation");
+            playerIframe.src = url; 
         }
-
-        video.addEventListener('timeupdate', () => {
-            const percentage = (video.currentTime / video.duration) * 100;
-            progressBar.style.width = `${percentage || 0}%`;
-        });
-
-        video.addEventListener('durationchange', () => {
-            durationTimeEl.textContent = formatTime(video.duration);
-        });
-
-        progressArea.addEventListener('click', (e) => {
-            const clickPercent = e.offsetX / progressArea.clientWidth;
-            if (video.duration) video.currentTime = clickPercent * video.duration;
-        });
-
-        progressArea.addEventListener('mousemove', (e) => {
-            if (!video.duration) return;
-            const clickPercent = e.offsetX / progressArea.clientWidth;
-            progressTooltip.textContent = formatTime(clickPercent * video.duration);
-            progressTooltip.style.left = `${e.offsetX}px`;
-            progressTooltip.style.display = 'block';
-        });
-
-        progressArea.addEventListener('mouseleave', () => progressTooltip.style.display = 'none');
-
-        rewindBtn.addEventListener('click', () => video.currentTime -= 10);
-        forwardBtn.addEventListener('click', () => video.currentTime += 10);
-
-        videoWrapper.addEventListener('dblclick', (e) => {
-            const rect = videoWrapper.getBoundingClientRect();
-            if ((e.clientX - rect.left) < rect.width / 2) {
-                video.currentTime -= 10;
-            } else {
-                video.currentTime += 10;
-            }
-        });
-
-        muteBtn.addEventListener('click', () => {
-            video.muted = !video.muted;
-            muteBtn.innerHTML = `<span class="material-icons-round">${video.muted ? 'volume_off' : 'volume_up'}</span>`;
-            volumeSlider.value = video.muted ? 0 : video.volume;
-        });
-
-        volumeSlider.addEventListener('input', (e) => {
-            video.volume = e.target.value;
-            video.muted = video.volume === 0;
-            muteBtn.innerHTML = `<span class="material-icons-round">${video.muted ? 'volume_off' : 'volume_up'}</span>`;
-        });
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                playerContainer.requestFullscreen().catch(err => console.log(err));
-                fullscreenBtn.innerHTML = '<span class="material-icons-round">fullscreen_exit</span>';
-            } else {
-                document.exitFullscreen();
-                fullscreenBtn.innerHTML = '<span class="material-icons-round">fullscreen</span>';
-            }
-        }
-        fullscreenBtn.addEventListener('click', toggleFullscreen);
-
-        function resetControlsTimer() {
-            playerContainer.classList.remove('hide-controls');
-            clearTimeout(controlsTimeout);
-            if (!video.paused) {
-                controlsTimeout = setTimeout(() => playerContainer.classList.add('hide-controls'), 2500);
-            }
-        }
-        playerContainer.addEventListener('mousemove', resetControlsTimer);
-
-        window.addEventListener('keydown', (e) => {
-            if (document.activeElement === searchInput) return;
-            if (playerContainer.style.display === 'block') {
-                if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-                else if (e.code === 'KeyF') { e.preventDefault(); toggleFullscreen(); }
-                else if (e.code === 'ArrowRight') video.currentTime += 10;
-                else if (e.code === 'ArrowLeft') video.currentTime -= 10;
-            }
-        });
     </script>
 </body>
 </html>
