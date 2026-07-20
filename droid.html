@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XINEMAX - Freemium Stream Ecosystem (Android TV)</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <style>
+        :root {
+            --brand-color: #8B5CF6; 
+            --brand-glow: rgba(139, 92, 246, 0.6);
+            --bg-deep: #0B0B0F;     
+            --card-bg: #13131A;
+            --nav-bg: rgba(11, 11, 15, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --tv-focus: #A78BFA;
+        }
+
+        /* TV ekranlarında scrollbar gizlenir veya minimal tutulur */
+        ::-webkit-scrollbar { width: 0px; height: 0px; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: #F3F4F6;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-top: 150px; /* Genişletilmiş TV Header alanı için */
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* --- KUMANDA ODAKLANMA EFEKTİ (CRITICAL FOR TV) --- */
+        .focusable {
+            outline: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .focusable:focus {
+            transform: scale(1.08) !important;
+            border-color: var(--tv-focus) !important;
+            box-shadow: 0 0 25px var(--brand-glow) !important;
+            background: rgba(139, 92, 246, 0.2) !important;
+            color: #ffffff !important;
+        }
+
+        /* --- KİLİT EKRANI STİLLERİ --- */
+        #lock-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0B0B0F;
+            z-index: 999999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .lock-box {
+            background: #13131A;
+            padding: 50px;
+            border-radius: 20px;
+            border: 2px solid var(--glass-border);
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            max-width: 450px;
+            width: 100%;
+        }
+        .lock-box h2 {
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, #fff, var(--brand-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .lock-box h4 { margin-top: 0; color: #6B7280; font-size: 1.1rem; }
+        .lock-box input {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            margin: 30px auto 20px auto;
+            border: 2px solid var(--glass-border);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .lock-box button {
+            width: 100%;
+            padding: 16px;
+            background: var(--brand-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #lock-error {
+            color: #ff4d4d;
+            font-size: 1.1rem;
+            margin-top: 15px;
+            display: none;
+            font-weight: 600;
+        }
+
+        /* --- HEADER VE TV KATEGORİ ŞERİDİ --- */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background-color: var(--nav-bg);
+            display: flex;
+            flex-direction: column;
+            padding: 15px 5%;
+            z-index: 1000;
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid var(--glass-border);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .logo {
+            font-size: 2rem;
+            font-weight: 950;
+            letter-spacing: 3px;
+            background: linear-gradient(45deg, #fff, var(--brand-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .search-container {
+            width: 40%;
+            max-width: 500px;
+        }
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--glass-border);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+        }
+
+        /* TV Uyumlu Yatay Kategori Listesi (Açılır kutu yerine) */
+        .tv-categories-bar {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 15px 0 5px 0;
+            width: 100%;
+        }
+        .cat-item {
+            padding: 10px 24px;
+            background: rgba(255,255,255,0.04);
+            border: 2px solid var(--glass-border);
+            border-radius: 8px;
+            white-space: nowrap;
+            color: #9CA3AF;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .cat-item.active {
+            background: var(--brand-color);
+            color: white;
+            border-color: var(--brand-color);
+        }
+
+        main {
+            padding: 0 5% 60px 5%;
+            z-index: 5;
+        }
+        h2.section-title {
+            font-size: 1.6rem;
+            margin-top: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #E5E7EB;
+        }
+
+        /* --- FİLM GRID GRUBU --- */
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* TV için kartlar büyütüldü */
+            gap: 30px;
+            padding: 20px 0;
+        }
+        .movie-card {
+            background-color: var(--card-bg);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 2px solid var(--glass-border);
+            text-decoration: none;
+            display: block;
+        }
+        .movie-thumb {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            background: #1A1A24;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4B5563;
+            font-size: 3rem;
+        }
+        .movie-info {
+            padding: 16px;
+            background: #13131A;
+        }
+        .movie-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #E5E7EB;
+        }
+
+        /* --- DETAY SAYFASI --- */
+        .details-page {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: var(--bg-deep);
+            z-index: 1500;
+            overflow-y: auto;
+        }
+        .details-page.active { display: block; }
+        .close-details-btn, .close-player-btn {
+            position: absolute;
+            top: 30px; right: 30px;
+            z-index: 1600;
+            background: rgba(19, 19, 26, 0.9);
+            border: 2px solid var(--glass-border);
+            color: white;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .details-hero {
+            position: relative;
+            width: 100%;
+            min-height: 60vh;
+            background-size: cover;
+            background-position: center top;
+            display: flex;
+            align-items: flex-end;
+            padding: 60px 5%;
+            box-sizing: border-box;
+        }
+        .details-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(11,11,15,0.3) 0%, rgba(11,11,15,1) 100%);
+            z-index: 1;
+        }
+        .details-hero-content {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            gap: 40px;
+            align-items: flex-end;
+            width: 100%;
+        }
+        .details-poster {
+            width: 260px;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9);
+            border: 2px solid var(--glass-border);
+        }
+        .details-meta { flex: 1; }
+        .details-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin: 0 0 15px 0;
+        }
+        .details-sub-meta {
+            display: flex;
+            gap: 20px;
+            color: #9CA3AF;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+        .details-rating {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .play-now-btn {
+            background: var(--brand-color);
+            color: white;
+            border: none;
+            padding: 18px 45px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px var(--brand-glow);
+        }
+        .trailer-link-btn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #E5E7EB;
+            border: 2px solid var(--glass-border);
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            margin-left: 20px;
+        }
+        .details-body {
+            padding: 50px 5%;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 60px;
+            box-sizing: border-box;
+        }
+        .info-section h3 {
+            font-size: 1.5rem;
+            border-left: 5px solid var(--brand-color);
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+        .info-section p {
+            color: #D1D5DB;
+            line-height: 1.8;
+            font-size: 1.2rem;
+        }
+        .cast-list { display: flex; flex-direction: column; gap: 15px; }
+        .cast-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.02);
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: 2px solid var(--glass-border);
+        }
+        .cast-img { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; }
+        .cast-name { font-weight: 700; font-size: 1.1rem; }
+        .cast-character { color: #6B7280; font-size: 0.95rem; }
+
+        /* --- VİDEO OYNATICI (FULLSCREEN TV PLAYER) --- */
+        .player-container {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 2000;
+        }
+        .video-wrapper { width: 100%; height: 100%; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .player-title {
+            position: absolute;
+            top: 30px; left: 30px; z-index: 2100;
+            padding: 12px 24px;
+            background: rgba(19, 19, 26, 0.85);
+            border-radius: 10px;
+            font-size: 1.2rem;
+            color: #E5E7EB;
+        }
+        .player-loader-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0B0B0F;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .status-message { text-align: center; padding: 60px; font-size: 1.4rem; color: #9CA3AF; }
+        #infinite-loading { text-align: center; padding: 40px; font-size: 1.3rem; color: var(--brand-color); font-weight: 700; display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- KİLİT EKRANI -->
+    <div id="lock-screen">
+        <div class="lock-box">
+            <h2>XINEMAX</h2>
+            <h4>by downer</h4>
+            <input type="password" id="lock-input" class="focusable" placeholder="Şifreyi Girin" maxlength="6" autofocus tabindex="1">
+            <button onclick="checkPassword()" class="focusable" tabindex="2">Giriş Yap</button>
+            <div id="lock-error">Hatalı Şifre!</div>
+        </div>
+    </div>
+
+    <header id="main-header">
+        <div class="header-top">
+            <div class="logo">XINEMAX</div>
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input focusable" placeholder="Yükleniyor..." disabled tabindex="3" />
+            </div>
+        </div>
+        <!-- TV Uyumlu Yatay Kategori Şeridi -->
+        <div class="tv-categories-bar" id="tv-categories-bar"></div>
+    </header>
+
+    <!-- FULLSCREEN DETAY SAYFASI -->
+    <div class="details-page" id="details-page">
+        <div class="close-details-btn focusable" id="close-details-btn" tabindex="0">
+            <span class="material-icons-round" style="font-size: 32px;">arrow_back</span>
+        </div>
+        <div id="details-dynamic-content"></div>
+    </div>
+
+    <!-- PLAYER CONTAINER -->
+    <div class="player-container" id="player-container">
+        <div class="player-title" id="current-title">Film Yükleniyor</div>
+        <div class="close-player-btn focusable" id="close-player-btn" tabindex="0">
+            <span class="material-icons-round" style="font-size: 32px;">close</span>
+        </div>
+        <div class="video-wrapper">
+            <div class="player-loader-overlay" id="player-loader">
+                <h2 style="color: white;">Yükleniyor...</h2>
+            </div>
+            <iframe id="player-iframe" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+    </div>
+
+    <main id="main-content">
+        <div id="status" class="status-message">İçerikler yükleniyor, lütfen bekleyin...</div>
+        <h2 id="section-title" class="section-title" style="display:none;">TÜM FİLMLER</h2>
+        <div class="movie-grid" id="movie-grid"></div>
+        <div id="infinite-loading">Veri blokları aktarılıyor...</div>
+    </main>
+
+    <script>
+        const M3U_URL = "https://tv606.github.io/xinemax/listx.m3u";
+        const TMDB_API_KEY = "43ddba9df87b2636f3c27ec9f382c85f"; 
+        
+        let allMovies = [];      
+        let filteredMovies = []; 
+        let activeCategory = "Tümü";
+        const ITEMS_PER_PAGE = 30; 
+        let currentPage = 1;
+        let isLoadingMore = false;
+
+        // DOM Elemanları
+        const movieGrid = document.getElementById('movie-grid');
+        const searchInput = document.getElementById('search-input');
+        const statusDiv = document.getElementById('status');
+        const sectionTitle = document.getElementById('section-title');
+        const categoriesBar = document.getElementById('tv-categories-bar');
+        const playerContainer = document.getElementById('player-container');
+        const playerIframe = document.getElementById('player-iframe');
+        const currentTitle = document.getElementById('current-title');
+        const infiniteLoading = document.getElementById('infinite-loading');
+        const loaderOverlay = document.getElementById('player-loader');
+        const detailsPage = document.getElementById('details-page');
+        const detailsDynamicContent = document.getElementById('details-dynamic-content');
+
+        // Kilit Ekranı
+        function checkPassword() {
+            const input = document.getElementById('lock-input');
+            const errorDiv = document.getElementById('lock-error');
+            const now = new Date();
+            const secretKey = (now.getHours() * 10000) + (now.getMinutes() * 100);
+            
+            if (Number(input.value) === secretKey) {
+                document.getElementById('lock-screen').style.display = 'none';
+                fetchM3UList();
+                setTimeout(() => { searchInput.focus(); }, 500);
+            } else {
+                errorDiv.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        document.getElementById('lock-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        // Kapatma Eventleri
+        document.getElementById('close-player-btn').addEventListener('click', closeVideoPlayer);
+        document.getElementById('close-details-btn').addEventListener('click', closeDetailsPage);
+
+        playerIframe.addEventListener('load', () => {
+            loaderOverlay.style.display = 'none';
+        });
+
+        // --- ANDROID TV KUMANDA KONTROLLERİ (D-PAD & BACK KEYBOARD LOGIC) ---
+        window.addEventListener('keydown', function(e) {
+            // Kumanda Geri Tuşu Algılama (KeyCode 4 Android standart kumanda geri tuşudur)
+            if (e.keyCode === 4 || e.key === 'Escape' || e.key === 'BackSpace') {
+                if (playerContainer.style.display === 'block') {
+                    e.preventDefault();
+                    closeVideoPlayer();
+                } else if (detailsPage.classList.contains('active')) {
+                    e.preventDefault();
+                    closeDetailsPage();
+                }
+            }
+
+            // Kumanda Seçim Tuşu (Enter/OK) Focus durumundayken tıklama simülasyonu yapar
+            if (e.key === 'Enter') {
+                if (document.activeElement && document.activeElement.classList.contains('focusable')) {
+                    // Eğer input alanı değilse click event'i üret
+                    if(document.activeElement.tagName !== 'INPUT') {
+                        e.preventDefault();
+                        document.activeElement.click();
+                    }
+                }
+            }
+        });
+
+        function closeVideoPlayer() {
+            playerContainer.style.display = 'none';
+            playerIframe.src = "";
+            const lastBtn = document.getElementById('details-play-btn');
+            if(lastBtn) lastBtn.focus();
+        }
+
+        function closeDetailsPage() {
+            detailsPage.classList.remove('active');
+            detailsDynamicContent.innerHTML = '';
+            // Grid'deki ilk karta veya arama çubuğuna odağı geri ver
+            const firstCard = movieGrid.querySelector('.focusable');
+            if(firstCard) firstCard.focus();
+        }
+
+        async function fetchM3UList() {
+            try {
+                const response = await fetch(M3U_URL);
+                if (!response.ok) throw new Error("Veri çekilemedi.");
+                const data = await response.text();
+                
+                allMovies = parseM3U(data);
+                filteredMovies = shuffleArray([...allMovies]);
+                
+                buildTvCategories();
+                
+                statusDiv.style.display = 'none';
+                sectionTitle.style.display = 'block';
+                searchInput.disabled = false;
+                searchInput.placeholder = `${allMovies.length.toLocaleString('tr-TR')} içerik hazır. Kumanda ile arayın...`;
+
+                renderNextPage();
+                window.addEventListener('scroll', handleScroll);
+            } catch (error) {
+                statusDiv.textContent = "Bağlantı hatası: Liste yüklenemedi.";
+            }
+        }
+
+        function parseM3U(data) {
+            const lines = data.split('\n');
+            const playlist = [];
+            const seenUrls = new Set();
+            let currentItem = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.startsWith('#EXTINF:')) {
+                    currentItem = {};
+                    const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+                    if (logoMatch) currentItem.logo = logoMatch[1];
+                    const groupMatch = line.match(/group-title="([^"]+)"/);
+                    currentItem.category = groupMatch ? groupMatch[1].trim() : "Diğer";
+                    const commaIndex = line.lastIndexOf(',');
+                    currentItem.title = commaIndex !== -1 ? line.substring(commaIndex + 1).trim() : "Bilinmeyen Başlık";
+                } else if (line.startsWith('http') && currentItem) {
+                    currentItem.url = line;
+                    if (!seenUrls.has(currentItem.url)) {
+                        seenUrls.add(currentItem.url);
+                        playlist.push(currentItem);
+                    }
+                    currentItem = null; 
+                }
+            }
+            return playlist;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // TV Uyumlu Kategori Şeridini İnşa Et
+        function buildTvCategories() {
+            const categories = new Set();
+            allMovies.forEach(m => {
+                if(m.category && m.category !== "Diğer" && m.category !== "Son Eklenenler") {
+                    categories.add(m.category);
+                }
+            });
+
+            const sorted = ["Tümü", ...Array.from(categories).sort((a, b) => a.localeCompare(b, 'tr'))];
+            categoriesBar.innerHTML = "";
+            
+            sorted.forEach((cat, idx) => {
+                const item = document.createElement('div');
+                item.className = `cat-item focusable ${cat === activeCategory ? 'active' : ''}`;
+                item.textContent = cat;
+                item.setAttribute('tabindex', 10 + idx);
+                item.addEventListener('click', () => selectCategory(cat));
+                categoriesBar.appendChild(item);
+            });
+        }
+
+        function selectCategory(catName) {
+            activeCategory = catName;
+            document.querySelectorAll('.cat-item').forEach(el => {
+                el.classList.toggle('active', el.textContent === catName);
+            });
+            
+            searchInput.value = "";
+            filteredMovies = catName === "Tümü" ? [...allMovies] : allMovies.filter(m => m.category === catName);
+            filteredMovies = shuffleArray(filteredMovies);
+            
+            sectionTitle.textContent = catName.toUpperCase();
+            currentPage = 1;
+            movieGrid.innerHTML = '';
+            renderNextPage();
+        }
+
+        function renderNextPage() {
+            if (isLoadingMore) return;
+            isLoadingMore = true;
+            infiniteLoading.style.display = 'block';
+
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const pageItems = filteredMovies.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+            if (pageItems.length === 0) {
+                infiniteLoading.style.display = 'none';
+                isLoadingMore = false;
+                return;
+            }
+
+            pageItems.forEach((movie, index) => {
+                const card = document.createElement('div');
+                card.className = 'movie-card focusable';
+                card.setAttribute('tabindex', 100 + (currentPage * ITEMS_PER_PAGE) + index);
+                
+                const imgHtml = movie.logo 
+                    ? `<img class="movie-thumb" src="${movie.logo}" alt="${movie.title}" loading="lazy" onerror="this.src='https://placehold.co/240x320/13131A/8B5CF6?text=VIDEO'">`
+                    : `<div class="movie-thumb">🎞️</div>`;
+
+                card.innerHTML = `
+                    ${imgHtml}
+                    <div class="movie-info">
+                        <div class="movie-title">${movie.title}</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => showMovieDetailsPage(movie));
+                movieGrid.appendChild(card);
+            });
+
+            currentPage++;
+            infiniteLoading.style.display = 'none';
+            isLoadingMore = false;
+        }
+
+        function handleScroll() {
+            if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 400) {
+                renderNextPage();
+            }
+        }
+
+        // TV Arama Girdisi (Debounce Gecikmeli)
+        let searchTimeout;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.toLowerCase().trim();
+            searchTimeout = setTimeout(() => {
+                let baseList = activeCategory === "Tümü" ? [...allMovies] : allMovies.filter(m => m.category === activeCategory);
+                filteredMovies = query === "" ? shuffleArray(baseList) : baseList.filter(m => m.title.toLowerCase().includes(query));
+                currentPage = 1;
+                movieGrid.innerHTML = '';
+                renderNextPage();
+            }, 400);
+        });
+
+        function cleanMovieTitle(title) {
+            return title.replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').replace(/1080p|720p|4k|uhd|bluray|dual|türkçe|dublaj/gi, '').trim();
+        }
+
+        async function showMovieDetailsPage(movie) {
+            detailsDynamicContent.innerHTML = `<div class="status-message">Bilgiler senkronize ediliyor...</div>`;
+            detailsPage.classList.add('active');
+            document.getElementById('close-details-btn').focus();
+
+            let tmdbData = null;
+            const cleanTitle = cleanMovieTitle(movie.title);
+
+            try {
+                const searchRes = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}&language=tr-TR`);
+                const searchJson = await searchRes.json();
+                if (searchJson.results && searchJson.results.length > 0) {
+                    const detailRes = await fetch(`https://api.themoviedb.org/3/movie/${searchJson.results[0].id}?api_key=${TMDB_API_KEY}&language=tr-TR`);
+                    tmdbData = await detailRes.json();
+                }
+            } catch (err) { console.error(err); }
+
+            const title = tmdbData ? tmdbData.title : movie.title;
+            const overview = tmdbData && tmdbData.overview ? tmdbData.overview : "Bu içerik için özet açıklama bulunmuyor.";
+            const poster = tmdbData && tmdbData.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}` : (movie.logo || 'https://placehold.co/240x320/13131A/8B5CF6?text=VIDEO');
+            const backdrop = tmdbData && tmdbData.backdrop_path ? `https://image.tmdb.org/t/p/original${tmdbData.backdrop_path}` : '';
+            const rating = tmdbData ? tmdbData.vote_average.toFixed(1) : 'N/A';
+            const releaseYear = tmdbData && tmdbData.release_date ? tmdbData.release_date.split('-')[0] : 'Bilinmiyor';
+
+            detailsDynamicContent.innerHTML = `
+                <div class="details-hero" style="background-image: url('${backdrop}');">
+                    <div class="details-hero-content">
+                        <img class="details-poster" src="${poster}" alt="${title}">
+                        <div class="details-meta">
+                            <h1 class="details-title">${title}</h1>
+                            <div class="details-sub-meta">
+                                <span class="details-rating"><span class="material-icons-round" style="font-size:20px;">star</span> ${rating}</span>
+                                <span>•</span> <span>${releaseYear}</span>
+                                <span>•</span> <span>Kategori: ${movie.category}</span>
+                            </div>
+                            <button class="play-now-btn focusable" id="details-play-btn" tabindex="1000">
+                                <span class="material-icons-round" style="font-size:28px;">play_arrow</span> ŞİMDİ İZLE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="details-body">
+                    <div class="info-section">
+                        <h3>Özet / Konu</h3>
+                        <p>${overview}</p>
+                    </div>
+                </div>
+            `;
+
+            const playBtn = document.getElementById('details-play-btn');
+            playBtn.addEventListener('click', () => playVideo(movie.url, title));
+            setTimeout(() => { playBtn.focus(); }, 150);
+        }
+
+        function playVideo(url, title) {
+            playerContainer.style.display = 'block';
+            currentTitle.textContent = title;
+            loaderOverlay.style.display = 'flex';
+            playerIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-presentation");
+            playerIframe.src = url;
+            document.getElementById('close-player-btn').focus();
+        }
+    </script>
+</body>
+</html>
